@@ -3,6 +3,8 @@ import csv
 import json
 from .analyzer import Stats
 
+FORMULA_START = ("=", "+", "-", "@", "\t", "\r")
+
 
 def _section(title: str, rows, headers=("Value", "Count")) -> None:
     print(f"\n== {title} ==")
@@ -22,7 +24,10 @@ def print_report(s: Stats, top: int = 10) -> None:
     _section("Top source IPs", s.src_ips.most_common(top), ("IP", "Packets"))
     _section("Top destination IPs", s.dst_ips.most_common(top), ("IP", "Packets"))
     _section("Top conversations", [(f"{a} <-> {b}", n) for (a, b), n in s.conversations.most_common(top)], ("Pair", "Packets"))
-    _section("Top destination ports", s.dst_ports.most_common(top), ("Port", "Packets"))
+    # Two tables, because the numbers are not comparable: a SYN is one connection attempt,
+    # a UDP packet is one packet of an exchange (either direction).
+    _section("Top TCP destination ports", s.tcp_ports.most_common(top), ("Port", "Connection attempts (SYN)"))
+    _section("Top UDP service ports", s.udp_ports.most_common(top), ("Port", "Packets"))
     _section("DNS queries", s.dns_queries.most_common(top), ("Domain", "Queries"))
     print("\n== Suspicious activity ==")
     if s.port_scanners:
@@ -37,15 +42,34 @@ def save_json(s: Stats, path: str, top: int = 10) -> None:
         json.dump(s.to_dict(top), f, indent=2, ensure_ascii=False)
 
 
-def save_csv(s: Stats, path: str) -> None:
+def _csv_cell(value) -> str:
+    """A cell that starts with = + - or @ is run as a formula by Excel and LibreOffice.
+
+    DNS names come from the capture, so a leading apostrophe keeps such a cell plain text.
+    """
+    text = str(value)
+    return "'" + text if text.startswith(FORMULA_START) else text
+
+
+def save_csv(s: Stats, path: str, top: int = 10) -> None:
+    """Writes the same content as the JSON report: totals, top tables, conversations, scans."""
     with open(path, "w", newline="", encoding="utf-8") as f:
         w = csv.writer(f)
         w.writerow(["category", "key", "count"])
-        for name, counter in (("protocol", s.protocols), ("src_ip", s.src_ips),
-                              ("dst_ip", s.dst_ips), ("dst_port", s.dst_ports),
+        w.writerow(["summary", "total_packets", s.total_packets])
+        w.writerow(["summary", "total_bytes", s.total_bytes])
+        w.writerow(["summary", "duration_sec", round(s.duration, 3)])
+        for k, n in s.protocols.most_common():
+            w.writerow(["protocol", _csv_cell(k), n])
+        for name, counter in (("src_ip", s.src_ips), ("dst_ip", s.dst_ips),
+                              ("tcp_port", s.tcp_ports), ("udp_port", s.udp_ports),
                               ("dns_query", s.dns_queries)):
-            for k, n in counter.most_common():
-                w.writerow([name, k, n])
+            for k, n in counter.most_common(top):
+                w.writerow([name, _csv_cell(k), n])
+        for (a, b), n in s.conversations.most_common(top):
+            w.writerow(["conversation", _csv_cell(f"{a} <-> {b}"), n])
+        for k, n in s.port_scanners.items():
+            w.writerow(["port_scan", _csv_cell(k), n])
 
 
 def save_chart(s: Stats, path: str, top: int = 10) -> None:
@@ -63,6 +87,8 @@ def save_chart(s: Stats, path: str, top: int = 10) -> None:
         axes[1].barh([k for k, _ in ips][::-1], [n for _, n in ips][::-1])
     axes[1].set_title(f"Top {top} source IPs")
     axes[1].set_xlabel("Packets")
-    fig.tight_layout()
-    fig.savefig(path, dpi=120)
-    plt.close(fig)
+    try:
+        fig.tight_layout()
+        fig.savefig(path, dpi=120)
+    finally:
+        plt.close(fig)

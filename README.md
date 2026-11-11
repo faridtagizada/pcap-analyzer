@@ -5,9 +5,9 @@ A simple network traffic analyzer written in Python with **scapy**. It reads a P
 ## What it does
 
 - Totals: packet count, size and duration
-- Protocol breakdown (TCP, UDP, ICMP, DNS, ARP)
+- Protocol breakdown (TCP, UDP, ICMP, ICMPv6, DNS, ARP)
 - Most active source and destination IPs, and the busiest conversations
-- Most targeted ports
+- Most targeted TCP ports (connection attempts) and the busiest UDP service ports (packets), in two tables because the numbers are not comparable
 - A list of DNS queries
 - Port scan detection: a source IP that sends SYNs to at least N different ports on the same target (15 by default)
 - Large files are read as a stream with `PcapReader`
@@ -16,10 +16,11 @@ A simple network traffic analyzer written in Python with **scapy**. It reads a P
 ## Install
 
 ```bash
-git clone https://github.com/<your-username>/pcap-analyzer.git
+git clone https://github.com/faridtagizada/pcap-analyzer.git
 cd pcap-analyzer
 python3 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
+pip install -r requirements-chart.txt   # only if you want --chart (matplotlib)
 ```
 
 ## Usage
@@ -42,11 +43,13 @@ python -m pcapanalyzer capture.pcap --scan-threshold 25
 
 | Option | Description | Default |
 |---|---|---|
-| `--top N` | Rows per table | 10 |
+| `--top N` | Rows per table, on the screen and in the JSON and CSV files | 10 |
 | `--scan-threshold N` | Distinct ports needed to call it a port scan | 15 |
 | `--json FILE` | Write JSON | none |
-| `--csv FILE` | Write CSV | none |
-| `--chart FILE.png` | Write a chart | none |
+| `--csv FILE` | Write CSV (same content as the JSON) | none |
+| `--chart FILE.png` | Write a chart (needs matplotlib) | none |
+
+Missing folders in an output path are created. Names that come out of the capture (DNS queries) are made printable before they reach the terminal, and a CSV cell never starts with `=`, `+`, `-` or `@`.
 
 Part of the output for `samples/sample.pcap`:
 
@@ -75,8 +78,9 @@ pcap-analyzer/
 │   ├── generate_sample.py
 │   └── sample.pcap
 ├── tests/test_analyzer.py
-├── requirements.txt
-└── requirements-dev.txt
+├── requirements.txt        # scapy
+├── requirements-chart.txt  # matplotlib, for --chart
+└── requirements-dev.txt    # both, plus pytest
 ```
 
 ## Tests
@@ -89,6 +93,8 @@ pytest -v
 ## Limitations
 
 - Only SYN-based port scans are detected (no UDP scans, no slow scans).
+- The TCP port table counts connection attempts (SYN packets). A capture that starts in the middle of a connection shows no port for it.
+- The UDP service port is a guess: a port below 1024 wins, otherwise the port that was contacted first.
 - The content of encrypted traffic (HTTPS) is not analyzed, only the metadata.
 - IPv6 is supported at a basic level.
 - Port scan detection is heuristic: several clients behind one NAT address that connect to many ports on the same server can be reported as a scan.
