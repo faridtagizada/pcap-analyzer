@@ -8,11 +8,10 @@ sys.path.insert(0, ROOT)
 sys.path.insert(0, os.path.join(ROOT, "samples"))
 
 from generate_sample import build            # noqa: E402
-from scapy.all import wrpcap, Ether, IP, TCP, UDP, DNS, DNSQR  # noqa: E402
+from scapy.all import wrpcap, Ether, IP, IPv6, UDP, DNS, DNSQR, ICMPv6EchoRequest, ICMPv6ND_NS  # noqa: E402
 import json  # noqa: E402
 from pcapanalyzer.analyzer import analyze    # noqa: E402
 from pcapanalyzer.cli import main            # noqa: E402
-from pcapanalyzer.analyzer import Stats      # noqa: E402
 from pcapanalyzer.report import save_json    # noqa: E402
 
 
@@ -97,6 +96,20 @@ def test_empty_capture(tmp_path):
     assert s.total_packets == 0
     assert s.duration == 0.0
     assert s.port_scanners == {}
+
+
+def test_icmpv6_is_counted(tmp_path):
+    # ping6 and neighbor discovery used to be counted as "Other"
+    path = str(tmp_path / "icmpv6.pcap")
+    pkts = [Ether() / IPv6(src="2001:db8::1", dst="2001:db8::2") / ICMPv6EchoRequest(),
+            Ether() / IPv6(src="fe80::1", dst="ff02::1:ff00:2") / ICMPv6ND_NS(tgt="2001:db8::2")]
+    for i, p in enumerate(pkts):
+        p.time = 1_700_000_000.0 + i
+    wrpcap(path, pkts)
+    s = analyze(path)
+    assert s.protocols["ICMPv6"] == 2
+    assert "Other" not in s.protocols
+    assert s.src_ips["2001:db8::1"] == 1
 
 
 def test_udp_ports_use_service_port(tmp_path):

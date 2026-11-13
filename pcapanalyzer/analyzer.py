@@ -47,6 +47,12 @@ class Stats:
         }
 
 
+def is_icmpv6(pkt) -> bool:
+    """scapy has one class per ICMPv6 message (ICMPv6EchoRequest, ICMPv6ND_NS, ...)
+    and no common layer that haslayer() would find, so look at the layer names."""
+    return any(layer.__name__.startswith("ICMPv6") for layer in pkt.layers())
+
+
 def classify(pkt) -> str:
     """Returns the highest-level protocol of the packet."""
     if pkt.haslayer(DNS):
@@ -57,6 +63,8 @@ def classify(pkt) -> str:
         return "UDP"
     if pkt.haslayer(ICMP):
         return "ICMP"
+    if is_icmpv6(pkt):
+        return "ICMPv6"   # ping6, neighbor discovery ... used to end up in "Other"
     if pkt.haslayer(ARP):
         return "ARP"
     return "Other"

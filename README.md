@@ -5,7 +5,7 @@ A simple network traffic analyzer written in Python with **scapy**. It reads a P
 ## What it does
 
 - Totals: packet count, size and duration
-- Protocol breakdown (TCP, UDP, ICMP, DNS, ARP)
+- Protocol breakdown (TCP, UDP, ICMP, ICMPv6, DNS, ARP)
 - Most active source and destination IPs, and the busiest conversations
 - Most targeted ports
 - A list of DNS queries
@@ -16,7 +16,7 @@ A simple network traffic analyzer written in Python with **scapy**. It reads a P
 ## Install
 
 ```bash
-git clone https://github.com/<your-username>/pcap-analyzer.git
+git clone https://github.com/faridtagizada/pcap-analyzer.git
 cd pcap-analyzer
 python3 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
