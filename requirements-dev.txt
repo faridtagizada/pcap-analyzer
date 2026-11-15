@@ -1,2 +1,3 @@
 -r requirements.txt
+-r requirements-chart.txt
 pytest>=7.0

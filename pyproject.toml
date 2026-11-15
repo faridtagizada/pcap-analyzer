@@ -1,0 +1,31 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pcap-analyzer"
+dynamic = ["version"]
+description = "Network traffic statistics and simple detection for a PCAP file"
+readme = "README.md"
+license = { text = "MIT" }
+authors = [{ name = "Fərid Tağızadə" }]
+requires-python = ">=3.9"
+dependencies = ["scapy>=2.5"]
+
+[project.optional-dependencies]
+chart = ["matplotlib>=3.5"]
+
+[project.scripts]
+pcap-analyzer = "pcapanalyzer.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/faridtagizada/pcap-analyzer"
+
+[tool.setuptools]
+packages = ["pcapanalyzer"]
+
+[tool.setuptools.dynamic]
+version = { attr = "pcapanalyzer.__version__" }
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
