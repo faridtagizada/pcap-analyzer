@@ -31,7 +31,7 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--json", metavar="FILE", help="Write the results to JSON")
     p.add_argument("--csv", metavar="FILE", help="Write the results to CSV")
     p.add_argument("--chart", metavar="FILE.png", help="Create a chart (needs matplotlib)")
-    p.add_argument("-v", "--version", action="version", version=__version__)
+    p.add_argument("-V", "--version", action="version", version=__version__)
     return p
 
 

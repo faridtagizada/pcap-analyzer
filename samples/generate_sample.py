@@ -1,5 +1,7 @@
 """Generates a synthetic PCAP for tests and demos: normal traffic + DNS + a port scan."""
+import os
 import sys
+
 from scapy.all import Ether, IP, TCP, UDP, ICMP, DNS, DNSQR, wrpcap
 
 # Fixed MAC addresses. A bare Ether() takes them from the machine the script runs on, so
@@ -40,6 +42,8 @@ def build():
 
 
 if __name__ == "__main__":
-    out = sys.argv[1] if len(sys.argv) > 1 else "samples/sample.pcap"
+    # The default sits next to this script, so it works from any working directory.
+    default = os.path.join(os.path.dirname(os.path.abspath(__file__)), "sample.pcap")
+    out = sys.argv[1] if len(sys.argv) > 1 else default
     wrpcap(out, build())
     print(f"Written: {out}")

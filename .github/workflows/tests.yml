@@ -26,7 +26,7 @@ jobs:
       - name: Tests
         run: python -m pytest -q
       - name: flake8
-        run: flake8 --max-line-length 130 pcapanalyzer tests samples
+        run: flake8 pcapanalyzer tests samples
       - name: The sample can be rebuilt and analyzed
         run: |
           python samples/generate_sample.py "$RUNNER_TEMP/sample.pcap"

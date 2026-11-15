@@ -15,6 +15,8 @@ A simple network traffic analyzer written in Python with **scapy**. It reads a P
 
 ## Install
 
+Needs Python 3.9 or newer.
+
 ```bash
 git clone https://github.com/faridtagizada/pcap-analyzer.git
 cd pcap-analyzer
@@ -22,6 +24,8 @@ python3 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 pip install -r requirements-chart.txt   # only if you want --chart (matplotlib)
 ```
+
+Or install it as a command: `pip install .` (add `.[chart]` for the chart), then run `pcap-analyzer capture.pcap`.
 
 ## Usage
 
@@ -80,7 +84,9 @@ pcap-analyzer/
 ├── tests/test_analyzer.py
 ├── requirements.txt        # scapy
 ├── requirements-chart.txt  # matplotlib, for --chart
-└── requirements-dev.txt    # both, plus pytest
+├── requirements-dev.txt    # both, plus pytest
+├── pyproject.toml          # package metadata, `pip install .`
+└── .flake8                # the line length CI uses
 ```
 
 ## Tests
@@ -93,6 +99,7 @@ pytest -v
 ## Limitations
 
 - Only SYN-based port scans are detected (no UDP scans, no slow scans).
+- Only vertical scans are detected (one source, many ports on one target). A horizontal scan, one port on many hosts, is not reported.
 - The TCP port table counts connection attempts (SYN packets). A capture that starts in the middle of a connection shows no port for it.
 - The UDP service port is a guess: a port below 1024 wins, otherwise the port that was contacted first.
 - The content of encrypted traffic (HTTPS) is not analyzed, only the metadata.
